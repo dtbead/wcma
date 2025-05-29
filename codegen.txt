@@ -1,0 +1,6 @@
+# generate mock packages
+mockgen -source="storage/storage.go" > service/video_mock/video.go
+
+# generate sqlc queries
+cd internal/storage/postgres
+sqlc generate
