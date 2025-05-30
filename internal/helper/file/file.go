@@ -99,12 +99,10 @@ func GetHash(r io.Reader) (hashes entities.Hashes, read int64, err error) {
 	hashPool := getHashpool()
 	hashPool.buf.Reset(r)
 
-	ResetFileSeek(r)
-
 	mw := io.MultiWriter(hashPool.md5, hashPool.sha1, hashPool.sha256)
 	bytesRead, err := io.Copy(mw, &hashPool.buf)
 	if err != nil {
-		return entities.Hashes{}, -1, err
+		return entities.Hashes{}, bytesRead, err
 	}
 
 	h := entities.Hashes{

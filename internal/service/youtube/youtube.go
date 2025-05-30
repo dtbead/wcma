@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/dtbead/wc-maps-archive/internal/service"
+	"github.com/dtbead/wc-maps-archive/internal/entities"
 	"github.com/dtbead/wc-maps-archive/internal/storage"
 )
 
@@ -15,7 +15,15 @@ type YoutubeService struct {
 	FileRepository    storage.FileRepository
 }
 
-func (y YoutubeService) NewYoutubeProject(ctx context.Context, video io.Reader, extension string, project_youtube service.ProjectYoutube) (err error) {
+func NewService(YoutubeRepo storage.YoutubeRepository, FileRepo storage.FileRepository) *YoutubeService {
+	return &YoutubeService{YoutubeRepo, FileRepo}
+}
+
+func (y YoutubeService) NewYoutube(ctx context.Context, video io.Reader, project_youtube *entities.ProjectYoutube) (err error) {
+	panic("unimplemented")
+}
+
+func (y YoutubeService) NewYoutubeProject(ctx context.Context, video io.Reader, extension string, project_youtube entities.ProjectYoutube) (err error) {
 	switch {
 	case project_youtube.Project == nil:
 		return errors.New("given nil project")
@@ -44,7 +52,7 @@ func (y YoutubeService) NewYoutubeProject(ctx context.Context, video io.Reader, 
 	return nil
 }
 
-func (y YoutubeService) DownloadVideo(ctx context.Context, url string, downloader service.YoutubeDownloader) (err error) {
+func (y YoutubeService) DownloadVideo(ctx context.Context, url string, downloader entities.YoutubeDownloader) (err error) {
 	f, err := y.FileRepository.NewTempFile(ctx)
 	if err != nil {
 		return err

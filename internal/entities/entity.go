@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"context"
 	"errors"
 	"io"
 	"regexp"
@@ -155,6 +156,17 @@ type Project struct {
 	DateArchived  time.Time
 }
 
+type ProjectImport struct {
+	ProjectType                                ProjectType
+	DateAnnounced, DateCompleted, DateArchived time.Time
+	FileIDs                                    []FileID
+}
+
+type ProjectYoutube struct {
+	Project *Project
+	Youtube *Youtube
+}
+
 type ProjectMusic struct {
 	ProjectUUID ProjectUUID
 	id          int32
@@ -205,3 +217,7 @@ var (
 	ErrorInvalidYoutubeVideoPtr  = errors.New("nil youtube video pointer")
 	ErrorNotFound                = errors.New("not found")
 )
+
+type YoutubeDownloader interface {
+	Download(ctx context.Context, url string, output io.Writer) (youtube *Youtube, extension string, err error)
+}

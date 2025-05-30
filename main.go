@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
 	_ "modernc.org/sqlite"
 
+	"github.com/dtbead/wc-maps-archive/internal/download/ytdlp"
 	"github.com/dtbead/wc-maps-archive/internal/service"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -30,14 +32,11 @@ func main() {
 		log.Fatal(err)
 	}
 	service := service.NewService(storage)
+	ytdownloader := ytdlp.NewYtdlp(nil)
 
-	if service.FileService != nil {
-		return
+	err = service.YoutubeService.DownloadVideo(context.Background(), "https://www.youtube.com/watch?v=_RMk8qfoAAo", ytdownloader)
+	if err != nil {
+		log.Fatal(err)
 	}
-	/*
-		video_id, err := ivycool.DownloadYoutubeVideo(ctx, "https://www.youtube.com/watch?v=uQsZMuAyDNc")
-		if err != nil {
-			log.Fatal(err)
-		}
-	*/
+
 }

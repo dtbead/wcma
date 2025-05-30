@@ -37,11 +37,20 @@ func (f FileRepository) NewFile(ctx context.Context, file io.Reader, extension s
 		return entities.InvalidFileID, entities.ErrorInvalidFilePtr
 	}
 
+	// file_helper.ResetFileSeek is unable to catch our embedded *os.File struct, so we'll handle it here instead.
+	if t, ok := file.(tempFile); ok {
+		t.ResetFileSeek()
+	} else {
+		file_helper.ResetFileSeek(file)
+	}
+
+	// calculate file hash
 	hashes, read, err := file_helper.GetHash(file)
 	if err != nil {
 		return entities.InvalidFileID, err
 	}
 
+	// file_helper.GetHash will only return errors on file reading errors, but not when reading an empty file.
 	if read < 16 {
 		return entities.InvalidFileID, errors.New("read less than 16 bytes from file io.Reader")
 	}
@@ -51,6 +60,14 @@ func (f FileRepository) NewFile(ctx context.Context, file io.Reader, extension s
 	if file_helper.DoesPathExist(path_absolute) {
 		return entities.InvalidFileID, errors.New("path already exists")
 	}
+
+	// only begin tx at this point to not lock database when hashing our file
+	tx, err := f.db.Begin()
+	if err != nil {
+		return entities.InvalidFileID, err
+	}
+	defer tx.Rollback()
+	f.q = f.q.WithTx(tx)
 
 	r, err := f.q.NewFile(ctx, queries.NewFileParams{
 		Path:      path_relative,
@@ -64,8 +81,19 @@ func (f FileRepository) NewFile(ctx context.Context, file io.Reader, extension s
 		return entities.InvalidFileID, err
 	}
 
-	file_helper.ResetFileSeek(file)
+	// file_helper.ResetFileSeek is unable to catch our embedded *os.File struct, so we'll handle it here instead x2.
+	if t, ok := file.(tempFile); ok {
+		t.ResetFileSeek()
+	} else {
+		file_helper.ResetFileSeek(file)
+	}
+
 	err = file_helper.Copy(path_absolute, file)
+	if err != nil {
+		return entities.InvalidFileID, errors.Join(err, os.Remove(path_absolute))
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return entities.InvalidFileID, err
 	}
@@ -117,22 +145,26 @@ func (f FileRepository) NewTempFile(ctx context.Context) (file io.ReadWriteClose
 		return nil, err
 	}
 
-	return tempFile{f: tmp}, nil
+	return tempFile{tmp}, nil
 }
 
 type tempFile struct {
-	f *os.File
+	*os.File
+}
+
+func (t tempFile) ResetFileSeek() {
+	file_helper.ResetFileSeek(t.File)
 }
 
 func (t tempFile) Read(p []byte) (n int, err error) {
-	return t.f.Read(p)
+	return t.Read(p)
 }
 
 func (t tempFile) Write(p []byte) (n int, err error) {
-	return t.f.Write(p)
+	return t.Write(p)
 }
 
 func (t tempFile) Close() error {
-	err := t.f.Close()
-	return errors.Join(err, os.Remove(t.f.Name()))
+	err := t.File.Close()
+	return errors.Join(err, os.Remove(t.Name()))
 }
