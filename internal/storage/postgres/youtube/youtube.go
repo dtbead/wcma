@@ -64,7 +64,7 @@ func (y YoutubeRepository) NewYoutubeVideo(ctx context.Context, file_id entities
 	return nil
 }
 
-func (y YoutubeRepository) GetYoutube(ctx context.Context, youtube_id entities.YoutubeVideoID) (youtube_video *entities.YoutubeVideo, err error) {
+func (y YoutubeRepository) GetYoutubeVideo(ctx context.Context, youtube_id entities.YoutubeVideoID) (youtube_video *entities.YoutubeVideo, err error) {
 	res, err := y.q.GetYoutubeVideo(ctx, youtube_id)
 	if err != nil {
 		return nil, err
@@ -241,7 +241,7 @@ func (y YoutubeRepository) GetYoutubeFull(ctx context.Context, youtube_id entiti
 		return nil, errors.New("invalid youtube_id given")
 	}
 
-	yt, err := y.GetYoutube(ctx, youtube_id)
+	yt, err := y.GetYoutubeVideo(ctx, youtube_id)
 	if err != nil {
 		return nil, err
 	}

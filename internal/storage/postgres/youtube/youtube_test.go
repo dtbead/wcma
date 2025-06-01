@@ -143,7 +143,7 @@ func TestYoutubeRepository_GetYoutubeVideo(t *testing.T) {
 				}
 			}
 
-			gotYoutube_video, err := tt.y.GetYoutube(tt.args.ctx, tt.args.youtube_id)
+			gotYoutube_video, err := tt.y.GetYoutubeVideo(tt.args.ctx, tt.args.youtube_id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("YoutubeRepository.GetYoutube() error = %v, wantErr %v", err, tt.wantErr)
 				return
