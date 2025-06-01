@@ -290,20 +290,6 @@ func (y YoutubeRepository) GetYoutubeFileIDs(ctx context.Context, youtube_id ent
 	return file_ids, nil
 }
 
-func (y YoutubeRepository) GetProjectType(ctx context.Context, youtube_id entities.YoutubeVideoID) (project entities.ProjectType, err error) {
-	res, err := y.q.GetProjectTypeByYoutubeID(ctx, youtube_id)
-	if err != nil {
-		return entities.ProjectTypeUnknown, err
-	}
-
-	p, err := entities.NewProjectType(string(res))
-	if err != nil {
-		return entities.ProjectTypeUnknown, err
-	}
-
-	return p, nil
-}
-
 func (y YoutubeRepository) GetYtdlpVersion(ctx context.Context, youtube_id entities.YoutubeVideoID, file_id entities.FileID) (version entities.VideoYoutubeDlpVersion, err error) {
 	res, err := y.q.GetYoutubeYtdlpVersion(ctx, queries.GetYoutubeYtdlpVersionParams{
 		YoutubeID: youtube_id,
