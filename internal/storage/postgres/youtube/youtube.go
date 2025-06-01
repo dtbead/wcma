@@ -118,6 +118,19 @@ func (y YoutubeRepository) NewYoutube(ctx context.Context, file_id entities.File
 		return err
 	}
 
+	err = y.q.NewFileVideo(ctx, queries.NewFileVideoParams{
+		FileID:     int64(file_id),
+		Duration:   int32(youtube.YouTube.Duration),
+		Width:      youtube.YouTube.Video.Width,
+		Height:     youtube.YouTube.Video.Height,
+		Fps:        sql.NullInt16{Int16: youtube.YouTube.Video.Fps, Valid: youtube.YouTube.Video.Fps > 0},
+		VideoCodec: sql.NullString{String: youtube.YouTube.Video.VideoCodec, Valid: len(youtube.YouTube.Video.VideoCodec) >= 3},
+		AudioCodec: sql.NullString{String: youtube.YouTube.Video.AudioCodec, Valid: len(youtube.YouTube.Video.AudioCodec) >= 3},
+	})
+	if err != nil {
+		return err
+	}
+
 	err = y.q.AssignYoutubeTitle(ctx, queries.AssignYoutubeTitleParams{
 		YoutubeID: youtube.YouTube.YoutubeID,
 		Title:     youtube.Title,

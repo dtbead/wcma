@@ -26,11 +26,24 @@ DELETE FROM project_file WHERE file_id = $1;
 SELECT file_id FROM project_file WHERE project_id = (SELECT id FROM project WHERE uuid = $1);
 
 -- name: NewYoutube :exec
-INSERT INTO youtube_video (id, upload_date, duration, view_count, like_count, dislike_count, is_live, is_restricted)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+INSERT INTO youtube_video (
+    id, 
+    upload_date,
+    duration, 
+    view_count, 
+    like_count, 
+    dislike_count,
+    is_live,
+    is_restricted
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (id) DO UPDATE SET 
+    view_count = EXCLUDED.view_count, 
+    dislike_count = EXCLUDED.dislike_count,
+    is_live = EXCLUDED.is_live,
+    is_restricted = EXCLUDED.is_restricted;
 
 -- name: NewYoutubeChannelVideo :exec
-INSERT INTO youtube_channel_youtube_video (channel_id, youtube_id) VALUES ($1, $2);
+INSERT INTO youtube_channel_youtube_video (channel_id, youtube_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;
 
 -- name: NewYoutubeChannel :exec
 INSERT INTO youtube_channel (id) VALUES ($1) ON CONFLICT DO NOTHING;
@@ -59,10 +72,10 @@ SELECT title FROM youtube_title WHERE youtube_id = $1;
 SELECT description FROM youtube_description WHERE youtube_id = $1;
 
 -- name: AssignYoutubeTitle :exec
-INSERT INTO youtube_title (youtube_id, title, title_md5) VALUES ($1, $2, $3);
+INSERT INTO youtube_title (youtube_id, title, title_md5) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING;
 
 -- name: AssignYoutubeDescription :exec
-INSERT INTO youtube_description (youtube_id, description, description_md5) VALUES ($1, $2, $3);
+INSERT INTO youtube_description (youtube_id, description, description_md5) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING;
 
 -- name: AssignYoutubeFileID :exec
 INSERT INTO youtube_file (youtube_id, file_id) VALUES ($1, $2);
@@ -97,3 +110,15 @@ SELECT project.type FROM project
 INNER JOIN project_file ON project.id = project_file.project_id
 INNER JOIN youtube_file ON project_file.file_id = youtube_file.file_id
 WHERE youtube_file.youtube_id = $1;
+
+-- name: GetOrphanFiles :many
+SELECT file.* FROM file 
+WHERE file.id NOT IN (
+	SELECT youtube_file.file_id FROM youtube_file
+		UNION 
+	SELECT project_file.file_id FROM project_file
+);
+
+-- name: NewFileVideo :exec
+INSERT INTO file_video (file_id, duration, width, height, fps, video_codec, audio_codec)
+VALUES ($1, $2, $3, $4, $5, $6, $7);

@@ -45,6 +45,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getFileByIDStmt, err = db.PrepareContext(ctx, getFileByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetFileByID: %w", err)
 	}
+	if q.getOrphanFilesStmt, err = db.PrepareContext(ctx, getOrphanFiles); err != nil {
+		return nil, fmt.Errorf("error preparing query GetOrphanFiles: %w", err)
+	}
 	if q.getProjectByUUIDStmt, err = db.PrepareContext(ctx, getProjectByUUID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetProjectByUUID: %w", err)
 	}
@@ -80,6 +83,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.newFileStmt, err = db.PrepareContext(ctx, newFile); err != nil {
 		return nil, fmt.Errorf("error preparing query NewFile: %w", err)
+	}
+	if q.newFileVideoStmt, err = db.PrepareContext(ctx, newFileVideo); err != nil {
+		return nil, fmt.Errorf("error preparing query NewFileVideo: %w", err)
 	}
 	if q.newProjectStmt, err = db.PrepareContext(ctx, newProject); err != nil {
 		return nil, fmt.Errorf("error preparing query NewProject: %w", err)
@@ -148,6 +154,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getFileByIDStmt: %w", cerr)
 		}
 	}
+	if q.getOrphanFilesStmt != nil {
+		if cerr := q.getOrphanFilesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getOrphanFilesStmt: %w", cerr)
+		}
+	}
 	if q.getProjectByUUIDStmt != nil {
 		if cerr := q.getProjectByUUIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getProjectByUUIDStmt: %w", cerr)
@@ -206,6 +217,11 @@ func (q *Queries) Close() error {
 	if q.newFileStmt != nil {
 		if cerr := q.newFileStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing newFileStmt: %w", cerr)
+		}
+	}
+	if q.newFileVideoStmt != nil {
+		if cerr := q.newFileVideoStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing newFileVideoStmt: %w", cerr)
 		}
 	}
 	if q.newProjectStmt != nil {
@@ -299,6 +315,7 @@ type Queries struct {
 	deleteFileByIDStmt                   *sql.Stmt
 	deleteProjectByUUIDStmt              *sql.Stmt
 	getFileByIDStmt                      *sql.Stmt
+	getOrphanFilesStmt                   *sql.Stmt
 	getProjectByUUIDStmt                 *sql.Stmt
 	getProjectByYoutubeIDStmt            *sql.Stmt
 	getProjectFileStmt                   *sql.Stmt
@@ -311,6 +328,7 @@ type Queries struct {
 	getYoutubeVideoFormatByYoutubeIDStmt *sql.Stmt
 	getYoutubeYtdlpVersionStmt           *sql.Stmt
 	newFileStmt                          *sql.Stmt
+	newFileVideoStmt                     *sql.Stmt
 	newProjectStmt                       *sql.Stmt
 	newYoutubeStmt                       *sql.Stmt
 	newYoutubeChannelStmt                *sql.Stmt
@@ -333,6 +351,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteFileByIDStmt:                   q.deleteFileByIDStmt,
 		deleteProjectByUUIDStmt:              q.deleteProjectByUUIDStmt,
 		getFileByIDStmt:                      q.getFileByIDStmt,
+		getOrphanFilesStmt:                   q.getOrphanFilesStmt,
 		getProjectByUUIDStmt:                 q.getProjectByUUIDStmt,
 		getProjectByYoutubeIDStmt:            q.getProjectByYoutubeIDStmt,
 		getProjectFileStmt:                   q.getProjectFileStmt,
@@ -345,6 +364,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getYoutubeVideoFormatByYoutubeIDStmt: q.getYoutubeVideoFormatByYoutubeIDStmt,
 		getYoutubeYtdlpVersionStmt:           q.getYoutubeYtdlpVersionStmt,
 		newFileStmt:                          q.newFileStmt,
+		newFileVideoStmt:                     q.newFileVideoStmt,
 		newProjectStmt:                       q.newProjectStmt,
 		newYoutubeStmt:                       q.newYoutubeStmt,
 		newYoutubeChannelStmt:                q.newYoutubeChannelStmt,

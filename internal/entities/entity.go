@@ -107,6 +107,7 @@ type Youtube struct {
 
 type YoutubeVideo struct {
 	YoutubeID               YoutubeVideoID
+	Video                   Video
 	UploadDate              time.Time
 	Duration                int
 	ViewCount               int

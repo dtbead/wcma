@@ -58,6 +58,8 @@ func (y Ytdlp) Download(ctx context.Context, url string, output io.Writer) (yout
 		"--no-write-thumbnail",
 		"--no-embed-metadata",
 		"--no-embed-info-json",
+		//"-S",
+		// "res:480",
 	}
 	args = append(args, "-J", "--print", file_output, url)
 

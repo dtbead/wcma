@@ -141,8 +141,8 @@ CREATE TABLE "youtube_video_format" (
 	"file_id" BIGINT NOT NULL UNIQUE,
 	"format_id" TEXT NOT NULL,
 	"format" TEXT NOT NULL,
-	UNIQUE("youtube_id", "file_id"),
-	PRIMARY KEY("youtube_id", "file_id"),
+	UNIQUE("youtube_id", "format_id"),
+	PRIMARY KEY("youtube_id", "format_id"),
 	FOREIGN KEY ("youtube_id") REFERENCES "youtube_video"("id")
 	ON UPDATE CASCADE ON DELETE CASCADE,
 	FOREIGN KEY ("file_id") REFERENCES "file"("id")

@@ -64,6 +64,13 @@ func (m metadata) ToYoutubeEntity() entities.Youtube {
 			DislikeCount: m.Dislike_count,
 			IsLive:       m.Is_live,
 			IsRestricted: m.Age_limit > 0,
+			Video: entities.Video{
+				VideoCodec: m.Vcodec,
+				AudioCodec: m.Acodec,
+				Fps:        int16(m.Fps),
+				Width:      int16(m.Width),
+				Height:     int16(m.Height),
+			},
 		},
 		Channel: &entities.VideoYoutubeChannel{
 			ChannelID:  entities.YoutubeChannelID(m.Channel_id),

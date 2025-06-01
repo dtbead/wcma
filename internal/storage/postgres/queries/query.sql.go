@@ -26,7 +26,7 @@ func (q *Queries) AssignProjectFile(ctx context.Context, arg AssignProjectFilePa
 }
 
 const assignYoutubeDescription = `-- name: AssignYoutubeDescription :exec
-INSERT INTO youtube_description (youtube_id, description, description_md5) VALUES ($1, $2, $3)
+INSERT INTO youtube_description (youtube_id, description, description_md5) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING
 `
 
 type AssignYoutubeDescriptionParams struct {
@@ -55,7 +55,7 @@ func (q *Queries) AssignYoutubeFileID(ctx context.Context, arg AssignYoutubeFile
 }
 
 const assignYoutubeTitle = `-- name: AssignYoutubeTitle :exec
-INSERT INTO youtube_title (youtube_id, title, title_md5) VALUES ($1, $2, $3)
+INSERT INTO youtube_title (youtube_id, title, title_md5) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING
 `
 
 type AssignYoutubeTitleParams struct {
@@ -104,6 +104,46 @@ func (q *Queries) GetFileByID(ctx context.Context, id int64) (File, error) {
 		&i.Filesize,
 	)
 	return i, err
+}
+
+const getOrphanFiles = `-- name: GetOrphanFiles :many
+SELECT file.id, file.path, file.extension, file.md5, file.sha1, file.sha256, file.filesize FROM file 
+WHERE file.id NOT IN (
+	SELECT youtube_file.file_id FROM youtube_file
+		UNION 
+	SELECT project_file.file_id FROM project_file
+)
+`
+
+func (q *Queries) GetOrphanFiles(ctx context.Context) ([]File, error) {
+	rows, err := q.query(ctx, q.getOrphanFilesStmt, getOrphanFiles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []File
+	for rows.Next() {
+		var i File
+		if err := rows.Scan(
+			&i.ID,
+			&i.Path,
+			&i.Extension,
+			&i.Md5,
+			&i.Sha1,
+			&i.Sha256,
+			&i.Filesize,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getProjectByUUID = `-- name: GetProjectByUUID :one
@@ -392,6 +432,34 @@ func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) (int64, error)
 	return id, err
 }
 
+const newFileVideo = `-- name: NewFileVideo :exec
+INSERT INTO file_video (file_id, duration, width, height, fps, video_codec, audio_codec)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+`
+
+type NewFileVideoParams struct {
+	FileID     int64
+	Duration   int32
+	Width      int16
+	Height     int16
+	Fps        sql.NullInt16
+	VideoCodec sql.NullString
+	AudioCodec sql.NullString
+}
+
+func (q *Queries) NewFileVideo(ctx context.Context, arg NewFileVideoParams) error {
+	_, err := q.exec(ctx, q.newFileVideoStmt, newFileVideo,
+		arg.FileID,
+		arg.Duration,
+		arg.Width,
+		arg.Height,
+		arg.Fps,
+		arg.VideoCodec,
+		arg.AudioCodec,
+	)
+	return err
+}
+
 const newProject = `-- name: NewProject :one
 INSERT INTO project (uuid, type, date_announced, date_completed) VALUES ($1, $2, $3, $4) RETURNING uuid
 `
@@ -416,8 +484,21 @@ func (q *Queries) NewProject(ctx context.Context, arg NewProjectParams) (string,
 }
 
 const newYoutube = `-- name: NewYoutube :exec
-INSERT INTO youtube_video (id, upload_date, duration, view_count, like_count, dislike_count, is_live, is_restricted)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO youtube_video (
+    id, 
+    upload_date,
+    duration, 
+    view_count, 
+    like_count, 
+    dislike_count,
+    is_live,
+    is_restricted
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (id) DO UPDATE SET 
+    view_count = EXCLUDED.view_count, 
+    dislike_count = EXCLUDED.dislike_count,
+    is_live = EXCLUDED.is_live,
+    is_restricted = EXCLUDED.is_restricted
 `
 
 type NewYoutubeParams struct {
@@ -483,7 +564,7 @@ func (q *Queries) NewYoutubeChannelUploaderName(ctx context.Context, arg NewYout
 }
 
 const newYoutubeChannelVideo = `-- name: NewYoutubeChannelVideo :exec
-INSERT INTO youtube_channel_youtube_video (channel_id, youtube_id) VALUES ($1, $2)
+INSERT INTO youtube_channel_youtube_video (channel_id, youtube_id) VALUES ($1, $2) ON CONFLICT DO NOTHING
 `
 
 type NewYoutubeChannelVideoParams struct {
