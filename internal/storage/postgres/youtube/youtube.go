@@ -218,6 +218,60 @@ func (y YoutubeRepository) NewYoutube(ctx context.Context, file_id entities.File
 	return nil
 }
 
+func (y YoutubeRepository) GetYoutube(ctx context.Context, youtube_id entities.YoutubeVideoID) (youtube *entities.Youtube, err error) {
+	file_id, err := y.q.GetYoutubeFileID(ctx, youtube_id)
+	if err != nil {
+		return nil, err
+	}
+
+	if file_id == nil || len(file_id) < 1 {
+		return nil, errors.New("found no file_id for given youtube_id")
+	}
+
+	youtube_video, err := y.q.GetYoutubeVideo(ctx, youtube_id)
+	if err != nil {
+		return nil, err
+	}
+
+	file_video, err := y.q.GetFileVideo(ctx, file_id[0])
+	if err != nil {
+		return nil, err
+	}
+
+	yt := &entities.Youtube{
+		YouTube: entities.YoutubeVideo{
+			YoutubeID: youtube_id,
+			Video: entities.Video{
+				VideoCodec: file_video.VideoCodec.String,
+				AudioCodec: file_video.AudioCodec.String,
+				Duration:   int(file_video.Duration),
+				Width:      file_video.Width,
+				Height:     file_video.Height,
+				Fps:        file_video.Fps.Int16,
+			},
+			UploadDate:   youtube_video.UploadDate,
+			Duration:     int(youtube_video.Duration),
+			ViewCount:    int(youtube_video.ViewCount.Int32),
+			LikeCount:    int(youtube_video.LikeCount.Int32),
+			DislikeCount: int(youtube_video.DislikeCount.Int32),
+			IsLive:       youtube_video.IsLive.Bool,
+			IsRestricted: youtube_video.IsRestricted.Bool,
+		},
+	}
+
+	title, _ := y.q.GetYoutubeTitle(ctx, youtube_id)
+	if title != nil && len(title) > 0 {
+		yt.Title = title[0]
+	}
+
+	description, _ := y.q.GetYoutubeDescription(ctx, youtube_id)
+	if description != nil && len(description) > 0 {
+		yt.Description = description[0]
+	}
+
+	return yt, nil
+}
+
 func (y YoutubeRepository) GetYoutubeFileIDs(ctx context.Context, youtube_id entities.YoutubeVideoID) (file_ids []entities.FileID, err error) {
 	if youtube_id == "" {
 		return nil, errors.New("invalid youtube_id given")
@@ -234,52 +288,6 @@ func (y YoutubeRepository) GetYoutubeFileIDs(ctx context.Context, youtube_id ent
 	}
 
 	return file_ids, nil
-}
-
-func (y YoutubeRepository) GetYoutubeFull(ctx context.Context, youtube_id entities.YoutubeVideoID) (youtube *entities.Youtube, err error) {
-	if youtube_id == "" {
-		return nil, errors.New("invalid youtube_id given")
-	}
-
-	yt, err := y.GetYoutubeVideo(ctx, youtube_id)
-	if err != nil {
-		return nil, err
-	}
-
-	title, err := y.GetTitle(ctx, youtube_id) // TODO: ignore error on empty row
-	if err != nil {
-		return nil, err
-	}
-
-	description, err := y.GetDescription(ctx, youtube_id) // TODO: ignore error on empty row
-	if err != nil {
-		return nil, err
-	}
-
-	channel, err := y.GetChannelByVideoID(ctx, youtube_id) // TODO: ignore error on empty row
-	if err != nil {
-		return nil, err
-	}
-
-	format, err := y.GetFormat(ctx, youtube_id)
-	if err != nil {
-		return nil, err
-	}
-
-	version, err := y.GetYtdlpVersion(ctx, youtube_id, format.FileID)
-	if err != nil {
-		return nil, err
-	}
-
-	youtube = new(entities.Youtube)
-	youtube.Title = title
-	youtube.Description = description
-	youtube.Channel = &channel
-	youtube.YouTube = *yt
-	youtube.Format = &format
-	youtube.DlpVersion = &version
-
-	return youtube, nil
 }
 
 func (y YoutubeRepository) GetProjectType(ctx context.Context, youtube_id entities.YoutubeVideoID) (project entities.ProjectType, err error) {

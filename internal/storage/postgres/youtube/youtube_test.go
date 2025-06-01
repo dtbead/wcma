@@ -191,14 +191,35 @@ func TestYoutubeRepository_NewYoutube(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				yt, err := tt.y.GetYoutubeFull(tt.args.ctx, tt.args.youtube.YouTube.YoutubeID)
+				gotYoutube, err := tt.y.GetYoutube(tt.args.ctx, tt.args.youtube.YouTube.YoutubeID)
 				if err != nil {
-					t.Errorf("failed to get youtube metadata from db, %v", err)
+					t.Errorf("GetYoutube err = %v", err)
 					return
 				}
 
-				if !cmp.Equal(*yt, *tt.args.youtube) {
-					t.Errorf("got youtube metadata != want youtube metadata, %v", cmp.Diff(*yt, *tt.args.youtube))
+				channel, err := tt.y.GetChannelByVideoID(tt.args.ctx, tt.args.youtube.YouTube.YoutubeID)
+				if err != nil {
+					t.Errorf("GetChannelByVideoID err = %v", err)
+				} else {
+					gotYoutube.Channel = &channel
+				}
+
+				format, err := tt.y.GetFormat(tt.args.ctx, tt.args.youtube.YouTube.YoutubeID)
+				if err != nil {
+					t.Errorf("GetFormat err = %v", err)
+				} else {
+					gotYoutube.Format = &format
+				}
+
+				version, err := tt.y.GetYtdlpVersion(tt.args.ctx, tt.args.youtube.YouTube.YoutubeID, tt.args.file_id)
+				if err != nil {
+					t.Errorf("GetYtdlpVersion err = %v", err)
+				} else {
+					gotYoutube.DlpVersion = &version
+				}
+
+				if !cmp.Equal(*gotYoutube, *tt.args.youtube) {
+					t.Errorf("got youtube metadata != want youtube metadata, %v", cmp.Diff(*gotYoutube, *tt.args.youtube))
 				}
 			}
 

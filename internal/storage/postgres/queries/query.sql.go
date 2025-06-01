@@ -106,6 +106,25 @@ func (q *Queries) GetFileByID(ctx context.Context, id int64) (File, error) {
 	return i, err
 }
 
+const getFileVideo = `-- name: GetFileVideo :one
+SELECT file_id, duration, width, height, fps, video_codec, audio_codec FROM file_video WHERE file_id = $1
+`
+
+func (q *Queries) GetFileVideo(ctx context.Context, fileID int64) (FileVideo, error) {
+	row := q.queryRow(ctx, q.getFileVideoStmt, getFileVideo, fileID)
+	var i FileVideo
+	err := row.Scan(
+		&i.FileID,
+		&i.Duration,
+		&i.Width,
+		&i.Height,
+		&i.Fps,
+		&i.VideoCodec,
+		&i.AudioCodec,
+	)
+	return i, err
+}
+
 const getOrphanFiles = `-- name: GetOrphanFiles :many
 SELECT file.id, file.path, file.extension, file.md5, file.sha1, file.sha256, file.filesize FROM file 
 WHERE file.id NOT IN (

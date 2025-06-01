@@ -45,6 +45,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getFileByIDStmt, err = db.PrepareContext(ctx, getFileByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetFileByID: %w", err)
 	}
+	if q.getFileVideoStmt, err = db.PrepareContext(ctx, getFileVideo); err != nil {
+		return nil, fmt.Errorf("error preparing query GetFileVideo: %w", err)
+	}
 	if q.getOrphanFilesStmt, err = db.PrepareContext(ctx, getOrphanFiles); err != nil {
 		return nil, fmt.Errorf("error preparing query GetOrphanFiles: %w", err)
 	}
@@ -152,6 +155,11 @@ func (q *Queries) Close() error {
 	if q.getFileByIDStmt != nil {
 		if cerr := q.getFileByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getFileByIDStmt: %w", cerr)
+		}
+	}
+	if q.getFileVideoStmt != nil {
+		if cerr := q.getFileVideoStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getFileVideoStmt: %w", cerr)
 		}
 	}
 	if q.getOrphanFilesStmt != nil {
@@ -315,6 +323,7 @@ type Queries struct {
 	deleteFileByIDStmt                   *sql.Stmt
 	deleteProjectByUUIDStmt              *sql.Stmt
 	getFileByIDStmt                      *sql.Stmt
+	getFileVideoStmt                     *sql.Stmt
 	getOrphanFilesStmt                   *sql.Stmt
 	getProjectByUUIDStmt                 *sql.Stmt
 	getProjectByYoutubeIDStmt            *sql.Stmt
@@ -351,6 +360,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteFileByIDStmt:                   q.deleteFileByIDStmt,
 		deleteProjectByUUIDStmt:              q.deleteProjectByUUIDStmt,
 		getFileByIDStmt:                      q.getFileByIDStmt,
+		getFileVideoStmt:                     q.getFileVideoStmt,
 		getOrphanFilesStmt:                   q.getOrphanFilesStmt,
 		getProjectByUUIDStmt:                 q.getProjectByUUIDStmt,
 		getProjectByYoutubeIDStmt:            q.getProjectByYoutubeIDStmt,

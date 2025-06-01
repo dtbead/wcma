@@ -61,7 +61,6 @@ VALUES ($1, $2, $3, $4);
 -- name: GetYoutubeVideo :one
 SELECT * FROM youtube_video WHERE id = $1;
 
-
 -- name: GetYoutubeVideoFormatByYoutubeID :many
 SELECT * FROM youtube_video_format WHERE youtube_id = $1;
 
@@ -122,3 +121,7 @@ WHERE file.id NOT IN (
 -- name: NewFileVideo :exec
 INSERT INTO file_video (file_id, duration, width, height, fps, video_codec, audio_codec)
 VALUES ($1, $2, $3, $4, $5, $6, $7);
+
+-- name: GetFileVideo :one
+SELECT * FROM file_video WHERE file_id = $1;
+
