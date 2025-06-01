@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dtbead/wc-maps-archive/internal/entities"
+	"github.com/dtbead/wc-maps-archive/internal/helper/mock"
 	helper_test "github.com/dtbead/wc-maps-archive/internal/helper/test"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres/file"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres/youtube"
@@ -165,6 +166,7 @@ func TestYoutubeRepository_NewYoutube(t *testing.T) {
 	}
 
 	file_id := helperInsertFile(*fileRepo, t)
+	mockYt := mock.NewYoutube()
 
 	type args struct {
 		ctx     context.Context
@@ -178,8 +180,8 @@ func TestYoutubeRepository_NewYoutube(t *testing.T) {
 		wantErr bool
 	}{
 		{"nil youtube", *youtubeRepo, args{}, true},
-		{"invalid file_id", *youtubeRepo, args{context.Background(), 0, mockYt}, true},
-		{"valid insert", *youtubeRepo, args{context.Background(), file_id, mockYt}, false},
+		{"invalid file_id", *youtubeRepo, args{context.Background(), 0, &mockYt}, true},
+		{"valid insert", *youtubeRepo, args{context.Background(), file_id, &mockYt}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
