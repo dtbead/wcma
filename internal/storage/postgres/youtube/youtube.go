@@ -273,7 +273,7 @@ func (y YoutubeRepository) GetYoutube(ctx context.Context, youtube_id entities.Y
 }
 
 func (y YoutubeRepository) GetYoutubeFileIDs(ctx context.Context, youtube_id entities.YoutubeVideoID) (file_ids []entities.FileID, err error) {
-	if youtube_id == "" {
+	if !youtube_id.IsValid() {
 		return nil, errors.New("invalid youtube_id given")
 	}
 
@@ -290,16 +290,16 @@ func (y YoutubeRepository) GetYoutubeFileIDs(ctx context.Context, youtube_id ent
 	return file_ids, nil
 }
 
-func (y YoutubeRepository) GetYtdlpVersion(ctx context.Context, youtube_id entities.YoutubeVideoID, file_id entities.FileID) (version entities.VideoYoutubeDlpVersion, err error) {
+func (y YoutubeRepository) GetYtdlpVersion(ctx context.Context, youtube_id entities.YoutubeVideoID, file_id entities.FileID) (version *entities.VideoYoutubeDlpVersion, err error) {
 	res, err := y.q.GetYoutubeYtdlpVersion(ctx, queries.GetYoutubeYtdlpVersionParams{
 		YoutubeID: youtube_id,
 		FileID:    int64(file_id),
 	})
 	if err != nil {
-		return entities.VideoYoutubeDlpVersion{}, err
+		return nil, err
 	}
 
-	return entities.VideoYoutubeDlpVersion{
+	return &entities.VideoYoutubeDlpVersion{
 		YoutubeID:      youtube_id,
 		FileID:         entities.FileID(res.FileID),
 		Version:        res.Version,
@@ -308,13 +308,21 @@ func (y YoutubeRepository) GetYtdlpVersion(ctx context.Context, youtube_id entit
 	}, nil
 }
 
-func (y YoutubeRepository) GetFormat(ctx context.Context, youtube_id entities.YoutubeVideoID) (format entities.VideoYoutubeFormat, err error) {
-	res, err := y.q.GetYoutubeVideoFormatByYoutubeID(ctx, youtube_id)
-	if err != nil {
-		return entities.VideoYoutubeFormat{}, err
+func (y YoutubeRepository) GetFormat(ctx context.Context, youtube_id entities.YoutubeVideoID) (format *entities.VideoYoutubeFormat, err error) {
+	if !youtube_id.IsValid() {
+		return nil, errors.New("invalid youtube_id")
 	}
 
-	return entities.VideoYoutubeFormat{
+	res, err := y.q.GetYoutubeVideoFormatByYoutubeID(ctx, youtube_id)
+	if err != nil {
+		return nil, err
+	}
+
+	if res == nil || len(res) < 1 {
+		return nil, errors.New("no format found")
+	}
+
+	return &entities.VideoYoutubeFormat{
 		YoutubeID: youtube_id,
 		FileID:    entities.FileID(res[0].FileID),
 		Format:    res[0].Format,
@@ -323,6 +331,10 @@ func (y YoutubeRepository) GetFormat(ctx context.Context, youtube_id entities.Yo
 }
 
 func (y YoutubeRepository) GetTitle(ctx context.Context, youtube_id entities.YoutubeVideoID) (title string, err error) {
+	if !youtube_id.IsValid() {
+		return "", entities.ErrorInvalidYoutubeID
+	}
+
 	t, err := y.q.GetYoutubeTitle(ctx, youtube_id)
 	if err != nil {
 		return "", err
@@ -352,6 +364,10 @@ func (y YoutubeRepository) GetDescription(ctx context.Context, youtube_id entiti
 	desc, err := y.q.GetYoutubeDescription(ctx, youtube_id)
 	if err != nil {
 		return "", err
+	}
+
+	if len(desc) < 1 {
+		return "", errors.New("no description found")
 	}
 
 	return desc[0], nil

@@ -3,6 +3,7 @@ package youtube_test
 import (
 	"context"
 	"os"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -29,6 +30,17 @@ func helperInsertFile(fileRepo file.FileRepository, t *testing.T) (file_id entit
 	}
 
 	return file_id
+}
+
+// helperOpenTestFile opens a new video file for testing. helperOpenTestFile will implicicly call t.Fatalf if it fails to open a test file.
+// Caller is responsible for closing the file when they're finished.
+func helperOpenTestFile(t *testing.T) *os.File {
+	t.Helper()
+	f, err := os.Open("testdata/y_wo8pyoxyk.mkv")
+	if err != nil {
+		t.Fatalf("failed to open test file, %v", err)
+	}
+	return f
 }
 
 func TestYoutubeRepository_NewYoutubeVideo(t *testing.T) {
@@ -208,14 +220,14 @@ func TestYoutubeRepository_NewYoutube(t *testing.T) {
 				if err != nil {
 					t.Errorf("GetFormat err = %v", err)
 				} else {
-					gotYoutube.Format = &format
+					gotYoutube.Format = format
 				}
 
 				version, err := tt.y.GetYtdlpVersion(tt.args.ctx, tt.args.youtube.YouTube.YoutubeID, tt.args.file_id)
 				if err != nil {
 					t.Errorf("GetYtdlpVersion err = %v", err)
 				} else {
-					gotYoutube.DlpVersion = &version
+					gotYoutube.DlpVersion = version
 				}
 
 				if !cmp.Equal(*gotYoutube, *tt.args.youtube) {
@@ -227,45 +239,251 @@ func TestYoutubeRepository_NewYoutube(t *testing.T) {
 	}
 }
 
-var mockYt = &entities.Youtube{
-	YouTube: entities.YoutubeVideo{
-		YoutubeID:    "y_wo8pyoxyk",
-		UploadDate:   time.Unix(1745372790, 0).UTC().Round(time.Second),
-		Duration:     7,
-		ViewCount:    326,
-		LikeCount:    26,
-		IsLive:       false,
-		IsRestricted: false,
-	},
-	Channel: &entities.VideoYoutubeChannel{
-		ChannelID:  "UCKhKck7AoDI-H8PktMnZi0Q",
-		UploaderID: "@glassfirestar",
-		Uploader:   "Rusty",
-	},
-	Format: &entities.VideoYoutubeFormat{
-		YoutubeID: "y_wo8pyoxyk",
-		FileID:    1,
-		Format:    "136 - 976x720 (720p)+251 - audio only (medium)",
-		FormatID:  "136+251",
-	},
-	DlpVersion: &entities.VideoYoutubeDlpVersion{
-		FileID:         1,
-		YoutubeID:      "y_wo8pyoxyk",
-		Version:        "2025.04.30",
-		ReleaseGitHead: "505b400795af557bdcfd9d4fa7e9133b26ef431c",
-		Repository:     "yt-dlp/yt-dlp",
-	},
-	Title:       "does he know about the dore",
-	Description: "desc",
+func TestYoutubeRepository_GetYoutubeFileIDs(t *testing.T) {
+	db := helper_test.NewDatabase()
+	defer db.Close()
+	youtubeRepo := youtube.NewYoutubeRepository(db)
+	fileRepo, err := file.NewFileRepository(db, t.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create file repo, %v", err)
+	}
+
+	file_id := helperInsertFile(*fileRepo, t)
+	mockYt := mock.NewYoutube()
+	if err := youtubeRepo.NewYoutube(context.Background(), file_id, &mockYt); err != nil {
+		t.Fatalf("failed to insert mock youtube, %v", err)
+	}
+
+	type args struct {
+		ctx        context.Context
+		youtube_id entities.YoutubeVideoID
+	}
+	tests := []struct {
+		name         string
+		y            youtube.YoutubeRepository
+		args         args
+		wantFile_ids []entities.FileID
+		wantErr      bool
+	}{
+		{"invalid youtube_id", *youtubeRepo, args{ctx: context.Background(), youtube_id: "abcdefgh"}, nil, true},
+		{"valid youtube_id", *youtubeRepo, args{ctx: context.Background(), youtube_id: mockYt.YouTube.YoutubeID}, []entities.FileID{file_id}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFile_ids, err := tt.y.GetYoutubeFileIDs(tt.args.ctx, tt.args.youtube_id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("YoutubeRepository.GetYoutubeFileIDs() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotFile_ids, tt.wantFile_ids) {
+				t.Errorf("YoutubeRepository.GetYoutubeFileIDs() = %v, want %v", gotFile_ids, tt.wantFile_ids)
+			}
+		})
+	}
 }
 
-// helperOpenTestFile opens a new video file for testing. helperOpenTestFile will implicicly call t.Fatalf if it fails to open a test file.
-// Caller is responsible for closing the file when they're finished.
-func helperOpenTestFile(t *testing.T) *os.File {
-	t.Helper()
-	f, err := os.Open("testdata/y_wo8pyoxyk.mkv")
+func TestYoutubeRepository_GetYtdlpVersion(t *testing.T) {
+	db := helper_test.NewDatabase()
+	defer db.Close()
+	youtubeRepo := youtube.NewYoutubeRepository(db)
+	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
-		t.Fatalf("failed to open test file, %v", err)
+		t.Fatalf("failed to create file repo, %v", err)
 	}
-	return f
+	file_id := helperInsertFile(*fileRepo, t)
+	mockYt := mock.NewYoutube()
+
+	err = youtubeRepo.NewYoutube(context.Background(), file_id, &mockYt)
+
+	type args struct {
+		ctx        context.Context
+		youtube_id entities.YoutubeVideoID
+		file_id    entities.FileID
+	}
+	tests := []struct {
+		name        string
+		y           youtube.YoutubeRepository
+		args        args
+		wantVersion *entities.VideoYoutubeDlpVersion
+		wantErr     bool
+	}{
+		{"invalid youtube_id", *youtubeRepo, args{context.Background(), "abcdef", file_id}, nil, true},
+		{"valid youtube_id/invalid file_id", *youtubeRepo, args{context.Background(), mockYt.YouTube.YoutubeID, file_id + 999}, nil, true},
+		{"valid youtube_id/valid file_id", *youtubeRepo, args{context.Background(), mockYt.YouTube.YoutubeID, file_id}, mock.NewYoutube().DlpVersion, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotVersion, err := tt.y.GetYtdlpVersion(tt.args.ctx, tt.args.youtube_id, tt.args.file_id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("YoutubeRepository.GetYtdlpVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotVersion, tt.wantVersion) {
+				t.Errorf("YoutubeRepository.GetYtdlpVersion() = %v, want %v", gotVersion, tt.wantVersion)
+			}
+		})
+	}
+}
+
+func TestYoutubeRepository_GetFormat(t *testing.T) {
+	db := helper_test.NewDatabase()
+	defer db.Close()
+	youtubeRepo := youtube.NewYoutubeRepository(db)
+	fileRepo, err := file.NewFileRepository(db, t.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create file repo, %v", err)
+	}
+	file_id := helperInsertFile(*fileRepo, t)
+	mockYt := mock.NewYoutube()
+
+	err = youtubeRepo.NewYoutube(context.Background(), file_id, &mockYt)
+
+	type args struct {
+		ctx        context.Context
+		youtube_id entities.YoutubeVideoID
+	}
+	tests := []struct {
+		name       string
+		y          youtube.YoutubeRepository
+		args       args
+		wantFormat *entities.VideoYoutubeFormat
+		wantErr    bool
+	}{
+		{"invalid youtube_id", *youtubeRepo, args{context.Background(), "abcdef"}, nil, true},
+		{"valid youtube_id", *youtubeRepo, args{context.Background(), mockYt.YouTube.YoutubeID}, mockYt.Format, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFormat, err := tt.y.GetFormat(tt.args.ctx, tt.args.youtube_id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("YoutubeRepository.GetFormat() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotFormat, tt.wantFormat) {
+				t.Errorf("YoutubeRepository.GetFormat() = %v, want %v", gotFormat, tt.wantFormat)
+			}
+		})
+	}
+}
+
+func TestYoutubeRepository_GetTitle(t *testing.T) {
+	db := helper_test.NewDatabase()
+	defer db.Close()
+	youtubeRepo := youtube.NewYoutubeRepository(db)
+	fileRepo, err := file.NewFileRepository(db, t.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create file repo, %v", err)
+	}
+	file_id := helperInsertFile(*fileRepo, t)
+	mockYt := mock.NewYoutube()
+
+	err = youtubeRepo.NewYoutube(context.Background(), file_id, &mockYt)
+
+	type args struct {
+		ctx        context.Context
+		youtube_id entities.YoutubeVideoID
+	}
+	tests := []struct {
+		name      string
+		y         youtube.YoutubeRepository
+		args      args
+		wantTitle string
+		wantErr   bool
+	}{
+		{"title not found", *youtubeRepo, args{context.Background(), "abcdefg"}, "", true},
+		{"valid id", *youtubeRepo, args{context.Background(), mockYt.YouTube.YoutubeID}, mockYt.Title, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotTitle, err := tt.y.GetTitle(tt.args.ctx, tt.args.youtube_id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("YoutubeRepository.GetTitle() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotTitle != tt.wantTitle {
+				t.Errorf("YoutubeRepository.GetTitle() = %v, want %v", gotTitle, tt.wantTitle)
+			}
+		})
+	}
+}
+
+func TestYoutubeRepository_GetChannelByVideoID(t *testing.T) {
+	db := helper_test.NewDatabase()
+	defer db.Close()
+	youtubeRepo := youtube.NewYoutubeRepository(db)
+	fileRepo, err := file.NewFileRepository(db, t.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create file repo, %v", err)
+	}
+	file_id := helperInsertFile(*fileRepo, t)
+	mockYt := mock.NewYoutube()
+
+	err = youtubeRepo.NewYoutube(context.Background(), file_id, &mockYt)
+
+	type args struct {
+		ctx        context.Context
+		youtube_id entities.YoutubeVideoID
+	}
+	tests := []struct {
+		name        string
+		y           youtube.YoutubeRepository
+		args        args
+		wantChannel entities.VideoYoutubeChannel
+		wantErr     bool
+	}{
+		{"invalid id", *youtubeRepo, args{context.Background(), "abcdefg"}, entities.VideoYoutubeChannel{}, true},
+		{"valid id", *youtubeRepo, args{context.Background(), mockYt.YouTube.YoutubeID}, *mockYt.Channel, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotChannel, err := tt.y.GetChannelByVideoID(tt.args.ctx, tt.args.youtube_id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("YoutubeRepository.GetChannelByVideoID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotChannel, tt.wantChannel) {
+				t.Errorf("YoutubeRepository.GetChannelByVideoID() = %v, want %v", gotChannel, tt.wantChannel)
+			}
+		})
+	}
+}
+
+func TestYoutubeRepository_GetDescription(t *testing.T) {
+	db := helper_test.NewDatabase()
+	defer db.Close()
+	youtubeRepo := youtube.NewYoutubeRepository(db)
+	fileRepo, err := file.NewFileRepository(db, t.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create file repo, %v", err)
+	}
+	file_id := helperInsertFile(*fileRepo, t)
+	mockYt := mock.NewYoutube()
+
+	err = youtubeRepo.NewYoutube(context.Background(), file_id, &mockYt)
+	type args struct {
+		ctx        context.Context
+		youtube_id entities.YoutubeVideoID
+	}
+	tests := []struct {
+		name            string
+		y               youtube.YoutubeRepository
+		args            args
+		wantDescription string
+		wantErr         bool
+	}{
+		{"invalid id", *youtubeRepo, args{context.Background(), "abcdefg"}, "", true},
+		{"valid id", *youtubeRepo, args{context.Background(), mockYt.YouTube.YoutubeID}, mockYt.Description, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotDescription, err := tt.y.GetDescription(tt.args.ctx, tt.args.youtube_id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("YoutubeRepository.GetDescription() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotDescription != tt.wantDescription {
+				t.Errorf("YoutubeRepository.GetDescription() = %v, want %v", gotDescription, tt.wantDescription)
+			}
+		})
+	}
 }
