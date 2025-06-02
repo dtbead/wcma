@@ -139,6 +139,8 @@ func (f FileRepository) GetFile(ctx context.Context, file_id entities.FileID) (f
 	}, nil
 }
 
+// NewTempFile returns a temporary file to write/read to. Closing file will close further access
+// to the file, and delete it.
 func (f FileRepository) NewTempFile(ctx context.Context) (file io.ReadWriteCloser, err error) {
 	tmp, err := os.CreateTemp("", "")
 	if err != nil {
