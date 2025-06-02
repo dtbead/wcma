@@ -274,7 +274,7 @@ func (y YoutubeRepository) GetYoutube(ctx context.Context, youtube_id entities.Y
 
 func (y YoutubeRepository) GetYoutubeFileIDs(ctx context.Context, youtube_id entities.YoutubeVideoID) (file_ids []entities.FileID, err error) {
 	if !youtube_id.IsValid() {
-		return nil, errors.New("invalid youtube_id given")
+		return nil, entities.ErrorInvalidYoutubeID
 	}
 
 	res, err := y.q.GetYoutubeFileID(ctx, youtube_id)
@@ -310,7 +310,7 @@ func (y YoutubeRepository) GetYtdlpVersion(ctx context.Context, youtube_id entit
 
 func (y YoutubeRepository) GetFormat(ctx context.Context, youtube_id entities.YoutubeVideoID) (format *entities.VideoYoutubeFormat, err error) {
 	if !youtube_id.IsValid() {
-		return nil, errors.New("invalid youtube_id")
+		return nil, entities.ErrorInvalidYoutubeID
 	}
 
 	res, err := y.q.GetYoutubeVideoFormatByYoutubeID(ctx, youtube_id)
