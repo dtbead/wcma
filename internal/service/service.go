@@ -35,5 +35,6 @@ type FileService interface {
 }
 
 type YoutubeService interface {
-	NewYoutube(ctx context.Context, video io.Reader, project_youtube *entities.ProjectYoutube) (err error)
+	NewYoutube(ctx context.Context, file_id entities.FileID, youtube *entities.Youtube) (err error)
+	GetYoutubeFileIDs(ctx context.Context, youtube_id entities.YoutubeVideoID) (file_ids []entities.FileID, err error)
 }
