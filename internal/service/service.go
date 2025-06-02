@@ -21,7 +21,7 @@ func NewService(repositories *storage.Repository) *Service {
 	return &Service{
 		ProjectService: project.NewService(repositories.Project),
 		FileService:    file.NewService(repositories.File),
-		YoutubeService: youtube.NewService(repositories.Youtube, repositories.File),
+		YoutubeService: youtube.NewService(repositories.Youtube),
 	}
 }
 
@@ -36,5 +36,4 @@ type FileService interface {
 
 type YoutubeService interface {
 	NewYoutube(ctx context.Context, video io.Reader, project_youtube *entities.ProjectYoutube) (err error)
-	DownloadVideo(ctx context.Context, url string, downloader entities.YoutubeDownloader) (err error)
 }
