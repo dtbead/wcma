@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/dtbead/wc-maps-archive/internal/entities"
@@ -38,4 +39,29 @@ type FileService interface {
 type YoutubeService interface {
 	NewYoutube(ctx context.Context, file_id entities.FileID, youtube *entities.Youtube) (err error)
 	GetYoutubeFileIDs(ctx context.Context, youtube_id entities.YoutubeVideoID) (file_ids []entities.FileID, err error)
+}
+
+func (s Service) DownloadYoutube(ctx context.Context, url string, downloader entities.YoutubeDownloader) (err error) {
+	tmp, err := s.FileService.NewTempFile(ctx)
+	if err != nil {
+		return err
+	}
+	defer tmp.Close()
+
+	yt, ext, err := downloader.Download(ctx, url, tmp)
+	if err != nil {
+		return err
+	}
+
+	file_id, err := s.FileService.NewFile(ctx, tmp, ext)
+	if err != nil {
+		return err
+	}
+
+	err = s.YoutubeService.NewYoutube(ctx, file_id, yt)
+	if err != nil {
+		return errors.Join(err, s.FileService.DeleteFile(ctx, file_id))
+	}
+
+	return nil
 }
