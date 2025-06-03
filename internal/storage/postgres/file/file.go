@@ -158,14 +158,6 @@ func (t tempFile) ResetFileSeek() {
 	file_helper.ResetFileSeek(t.File)
 }
 
-func (t tempFile) Read(p []byte) (n int, err error) {
-	return t.Read(p)
-}
-
-func (t tempFile) Write(p []byte) (n int, err error) {
-	return t.Write(p)
-}
-
 func (t tempFile) Close() error {
 	err := t.File.Close()
 	return errors.Join(err, os.Remove(t.Name()))
