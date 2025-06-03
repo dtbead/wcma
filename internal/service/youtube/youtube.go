@@ -77,10 +77,16 @@ func (y YoutubeService) GetYoutubeFileIDs(ctx context.Context, youtube_id entiti
 }
 
 func (y YoutubeService) GetTitle(ctx context.Context, youtube_id entities.YoutubeVideoID) (title string, err error) {
-	panic("unimplemented")
+	if !youtube_id.IsValid() {
+		return "", entities.ErrorInvalidYoutubeID
+	}
+	return y.YoutubeRepository.GetTitle(ctx, youtube_id)
 }
 func (y YoutubeService) GetDescription(ctx context.Context, youtube_id entities.YoutubeVideoID) (description string, err error) {
-	panic("unimplemented")
+	if !youtube_id.IsValid() {
+		return "", entities.ErrorInvalidYoutubeID
+	}
+	return y.YoutubeRepository.GetDescription(ctx, youtube_id)
 }
 func (y YoutubeService) GetChannelVideos(ctx context.Context, channel_id entities.YoutubeChannelID) (videos []entities.YoutubeVideoID, err error) {
 	if !channel_id.IsValid() {

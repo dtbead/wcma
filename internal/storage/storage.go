@@ -27,6 +27,8 @@ type YoutubeRepository interface {
 	NewYoutubeVideo(ctx context.Context, file_id entities.FileID, youtube_video *entities.YoutubeVideo) (err error)
 	NewYoutube(ctx context.Context, file_id entities.FileID, youtube *entities.Youtube) (err error)
 	GetYoutube(ctx context.Context, youtube_id entities.YoutubeVideoID) (youtube *entities.Youtube, err error)
+	GetTitle(ctx context.Context, youtube_id entities.YoutubeVideoID) (title string, err error)
+	GetDescription(ctx context.Context, youtube_id entities.YoutubeVideoID) (description string, err error)
 	GetChannelVideos(ctx context.Context, channel_id entities.YoutubeChannelID) (videos []entities.YoutubeVideoID, err error)
 	GetYoutubeFileIDs(ctx context.Context, youtube_id entities.YoutubeVideoID) (file_ids []entities.FileID, err error)
 }
