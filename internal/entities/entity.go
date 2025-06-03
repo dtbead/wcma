@@ -222,3 +222,9 @@ var (
 type YoutubeDownloader interface {
 	Download(ctx context.Context, url string, output io.Writer) (youtube *Youtube, extension string, err error)
 }
+
+type FileRelationship struct {
+	FileID  FileID
+	Youtube YoutubeVideoID
+	Project ProjectUUID
+}
