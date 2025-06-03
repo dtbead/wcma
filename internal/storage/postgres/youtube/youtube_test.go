@@ -460,6 +460,9 @@ func TestYoutubeRepository_GetDescription(t *testing.T) {
 	mockYt := mock.NewYoutube()
 
 	err = youtubeRepo.NewYoutube(context.Background(), file_id, &mockYt)
+	if err != nil {
+		t.Fatalf("failed to insert mock youtube entry, %v", err)
+	}
 	type args struct {
 		ctx        context.Context
 		youtube_id entities.YoutubeVideoID
