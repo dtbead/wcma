@@ -9,3 +9,8 @@ sql:
         out: "queries"
         sql_package: "database/sql"
         emit_prepared_queries: true
+        overrides:
+          - column: "youtube_channel_youtube_video.youtube_id"
+            go_type:
+              import: "github.com/dtbead/wc-maps-archive/internal/entities"
+              type: "YoutubeVideoID"

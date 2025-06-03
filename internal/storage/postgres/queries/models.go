@@ -9,6 +9,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
+
+	"github.com/dtbead/wc-maps-archive/internal/entities"
 )
 
 type Projecttype string
@@ -152,7 +154,7 @@ type YoutubeChannelUploaderName struct {
 
 type YoutubeChannelYoutubeVideo struct {
 	ChannelID interface{}
-	YoutubeID interface{}
+	YoutubeID entities.YoutubeVideoID
 }
 
 type YoutubeDescription struct {

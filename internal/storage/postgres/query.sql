@@ -125,3 +125,5 @@ VALUES ($1, $2, $3, $4, $5, $6, $7);
 -- name: GetFileVideo :one
 SELECT * FROM file_video WHERE file_id = $1;
 
+-- name: GetYoutubeChannelVideos :many
+SELECT youtube_id FROM youtube_channel_youtube_video WHERE channel_id = $1;

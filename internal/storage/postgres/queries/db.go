@@ -66,6 +66,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getYoutubeChannelByIDStmt, err = db.PrepareContext(ctx, getYoutubeChannelByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetYoutubeChannelByID: %w", err)
 	}
+	if q.getYoutubeChannelVideosStmt, err = db.PrepareContext(ctx, getYoutubeChannelVideos); err != nil {
+		return nil, fmt.Errorf("error preparing query GetYoutubeChannelVideos: %w", err)
+	}
 	if q.getYoutubeDescriptionStmt, err = db.PrepareContext(ctx, getYoutubeDescription); err != nil {
 		return nil, fmt.Errorf("error preparing query GetYoutubeDescription: %w", err)
 	}
@@ -190,6 +193,11 @@ func (q *Queries) Close() error {
 	if q.getYoutubeChannelByIDStmt != nil {
 		if cerr := q.getYoutubeChannelByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getYoutubeChannelByIDStmt: %w", cerr)
+		}
+	}
+	if q.getYoutubeChannelVideosStmt != nil {
+		if cerr := q.getYoutubeChannelVideosStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getYoutubeChannelVideosStmt: %w", cerr)
 		}
 	}
 	if q.getYoutubeDescriptionStmt != nil {
@@ -330,6 +338,7 @@ type Queries struct {
 	getProjectFileStmt                   *sql.Stmt
 	getProjectTypeByYoutubeIDStmt        *sql.Stmt
 	getYoutubeChannelByIDStmt            *sql.Stmt
+	getYoutubeChannelVideosStmt          *sql.Stmt
 	getYoutubeDescriptionStmt            *sql.Stmt
 	getYoutubeFileIDStmt                 *sql.Stmt
 	getYoutubeTitleStmt                  *sql.Stmt
@@ -367,6 +376,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getProjectFileStmt:                   q.getProjectFileStmt,
 		getProjectTypeByYoutubeIDStmt:        q.getProjectTypeByYoutubeIDStmt,
 		getYoutubeChannelByIDStmt:            q.getYoutubeChannelByIDStmt,
+		getYoutubeChannelVideosStmt:          q.getYoutubeChannelVideosStmt,
 		getYoutubeDescriptionStmt:            q.getYoutubeDescriptionStmt,
 		getYoutubeFileIDStmt:                 q.getYoutubeFileIDStmt,
 		getYoutubeTitleStmt:                  q.getYoutubeTitleStmt,

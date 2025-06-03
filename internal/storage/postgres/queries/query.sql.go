@@ -9,6 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/dtbead/wc-maps-archive/internal/entities"
 )
 
 const assignProjectFile = `-- name: AssignProjectFile :exec
@@ -262,11 +264,38 @@ type GetYoutubeChannelByIDRow struct {
 	UploaderName string
 }
 
-func (q *Queries) GetYoutubeChannelByID(ctx context.Context, youtubeID interface{}) (GetYoutubeChannelByIDRow, error) {
+func (q *Queries) GetYoutubeChannelByID(ctx context.Context, youtubeID entities.YoutubeVideoID) (GetYoutubeChannelByIDRow, error) {
 	row := q.queryRow(ctx, q.getYoutubeChannelByIDStmt, getYoutubeChannelByID, youtubeID)
 	var i GetYoutubeChannelByIDRow
 	err := row.Scan(&i.ChannelID, &i.UploaderID, &i.UploaderName)
 	return i, err
+}
+
+const getYoutubeChannelVideos = `-- name: GetYoutubeChannelVideos :many
+SELECT youtube_id FROM youtube_channel_youtube_video WHERE channel_id = $1
+`
+
+func (q *Queries) GetYoutubeChannelVideos(ctx context.Context, channelID interface{}) ([]entities.YoutubeVideoID, error) {
+	rows, err := q.query(ctx, q.getYoutubeChannelVideosStmt, getYoutubeChannelVideos, channelID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []entities.YoutubeVideoID
+	for rows.Next() {
+		var youtube_id entities.YoutubeVideoID
+		if err := rows.Scan(&youtube_id); err != nil {
+			return nil, err
+		}
+		items = append(items, youtube_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getYoutubeDescription = `-- name: GetYoutubeDescription :many
@@ -588,7 +617,7 @@ INSERT INTO youtube_channel_youtube_video (channel_id, youtube_id) VALUES ($1, $
 
 type NewYoutubeChannelVideoParams struct {
 	ChannelID interface{}
-	YoutubeID interface{}
+	YoutubeID entities.YoutubeVideoID
 }
 
 func (q *Queries) NewYoutubeChannelVideo(ctx context.Context, arg NewYoutubeChannelVideoParams) error {

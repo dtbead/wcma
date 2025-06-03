@@ -490,3 +490,47 @@ func TestYoutubeRepository_GetDescription(t *testing.T) {
 		})
 	}
 }
+
+func TestYoutubeRepository_GetChannelVideos(t *testing.T) {
+	db := helper_test.NewDatabase()
+	defer db.Close()
+	youtubeRepo := youtube.NewYoutubeRepository(db)
+	fileRepo, err := file.NewFileRepository(db, t.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create file repo, %v", err)
+	}
+	file_id := helperInsertFile(*fileRepo, t)
+	mockYt := mock.NewYoutube()
+
+	err = youtubeRepo.NewYoutube(context.Background(), file_id, &mockYt)
+	if err != nil {
+		t.Fatalf("failed to insert mock youtube entry, %v", err)
+	}
+
+	type args struct {
+		ctx        context.Context
+		channel_id entities.YoutubeChannelID
+	}
+	tests := []struct {
+		name       string
+		y          youtube.YoutubeRepository
+		args       args
+		wantVideos []entities.YoutubeVideoID
+		wantErr    bool
+	}{
+		{"no videos", *youtubeRepo, args{ctx: context.Background(), channel_id: entities.UnknownYoutubeChannelID}, nil, true},
+		{"one videos", *youtubeRepo, args{ctx: context.Background(), channel_id: mockYt.Channel.ChannelID}, []entities.YoutubeVideoID{mockYt.YouTube.YoutubeID}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotVideos, err := tt.y.GetChannelVideos(tt.args.ctx, tt.args.channel_id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("YoutubeRepository.GetChannelVideos() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotVideos, tt.wantVideos) {
+				t.Errorf("YoutubeRepository.GetChannelVideos() = %v, want %v", gotVideos, tt.wantVideos)
+			}
+		})
+	}
+}

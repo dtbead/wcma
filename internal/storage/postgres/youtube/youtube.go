@@ -372,3 +372,11 @@ func (y YoutubeRepository) GetDescription(ctx context.Context, youtube_id entiti
 
 	return desc[0], nil
 }
+
+func (y YoutubeRepository) GetChannelVideos(ctx context.Context, channel_id entities.YoutubeChannelID) (videos []entities.YoutubeVideoID, err error) {
+	res, err := y.q.GetYoutubeChannelVideos(ctx, channel_id)
+	if len(res) < 1 {
+		return nil, errors.New("no videos found")
+	}
+	return res, nil
+}

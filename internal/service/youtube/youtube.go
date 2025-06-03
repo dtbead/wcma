@@ -83,7 +83,10 @@ func (y YoutubeService) GetDescription(ctx context.Context, youtube_id entities.
 	panic("unimplemented")
 }
 func (y YoutubeService) GetChannelVideos(ctx context.Context, channel_id entities.YoutubeChannelID) (videos []entities.YoutubeVideoID, err error) {
-	panic("unimplemented")
+	if !channel_id.IsValid() {
+		return nil, entities.ErrorInvalidYoutubeChannelID
+	}
+	return y.YoutubeRepository.GetChannelVideos(ctx, channel_id)
 }
 func (y YoutubeService) GetYoutubeVideo(ctx context.Context, youtube_id entities.YoutubeVideoID) (video entities.YoutubeVideo, err error) {
 	panic("unimplemented")
