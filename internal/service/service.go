@@ -32,6 +32,7 @@ type ProjectService interface {
 type FileService interface {
 	NewFile(ctx context.Context, file io.Reader, extension string) (file_id entities.FileID, err error)
 	DeleteFile(ctx context.Context, file_id entities.FileID) (err error)
+	NewTempFile(ctx context.Context) (file io.ReadWriteCloser, err error)
 }
 
 type YoutubeService interface {
