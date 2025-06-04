@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/dtbead/wc-maps-archive/internal/entities"
-	"github.com/dtbead/wc-maps-archive/internal/helper/mock"
-	helper_test "github.com/dtbead/wc-maps-archive/internal/helper/test"
+	helper_test "github.com/dtbead/wc-maps-archive/internal/helper/testing"
+	mock "github.com/dtbead/wc-maps-archive/internal/helper/testing/mock/youtube"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres/file"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres/youtube"
 	"github.com/google/go-cmp/cmp"
