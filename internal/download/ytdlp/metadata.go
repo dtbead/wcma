@@ -68,8 +68,8 @@ func (m metadata) ToYoutubeEntity() entities.Youtube {
 				VideoCodec: m.Vcodec,
 				AudioCodec: m.Acodec,
 				Duration:   m.Duration,
-				Fps:        int16(m.Fps),
-				Width:      int16(m.Width),
+				Fps:        int16(m.Fps),   // I fully don't expect yt-dlp to ever pull an actual float value (ie something not 30.0)
+				Width:      int16(m.Width), // but in-case it does for some reason, well, here's where to fix that.
 				Height:     int16(m.Height),
 			},
 		},
