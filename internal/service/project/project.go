@@ -2,8 +2,11 @@ package project
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/dtbead/wc-maps-archive/internal/entities"
+	"github.com/dtbead/wc-maps-archive/internal/helper"
 	"github.com/dtbead/wc-maps-archive/internal/storage"
 )
 
@@ -16,15 +19,38 @@ func NewService(ProjectRepo storage.ProjectRepository) *ProjectService {
 }
 
 func (p ProjectService) NewProject(ctx context.Context, project *entities.ProjectImport) (uuid entities.ProjectUUID, err error) {
-	panic("unimplemented")
+	if project == nil {
+		return entities.InvalidProjectUUID, errors.New("given nil project")
+	}
+
+	proj := &entities.Project{
+		UUID:        helper.RandomUUID(),
+		FileIDs:     project.FileIDs,
+		ProjectType: project.ProjectType,
+		// DateArchived: time.Now().UTC().Truncate(time.Second),
+		// database layer handles this for us
+	}
+	if !project.DateCompleted.IsZero() {
+		proj.DateAnnounced = project.DateAnnounced.UTC().Truncate(time.Second)
+	}
+	if !project.DateAnnounced.IsZero() {
+		proj.DateCompleted = project.DateCompleted.UTC().Truncate(time.Second)
+	}
+
+	uuid, err = p.ProjectRepo.NewProject(ctx, proj)
+	if err != nil {
+		return entities.InvalidProjectUUID, err
+	}
+
+	return uuid, err
 }
 
 func (p ProjectService) DeleteProject(ctx context.Context, project_uuid entities.ProjectUUID) (err error) {
-	panic("unimplemented")
+	return p.ProjectRepo.DeleteProject(ctx, project_uuid)
 }
 
 func (p ProjectService) AssignFile(ctx context.Context, project_uuid entities.ProjectUUID, file_id entities.FileID) (err error) {
-	panic("unimplemented")
+	return p.AssignFile(ctx, project_uuid, file_id)
 }
 
 func (p ProjectService) AssignYoutube(ctx context.Context, project_uuid entities.ProjectUUID, youtube_id entities.YoutubeVideoID) (err error) {
