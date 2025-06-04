@@ -36,6 +36,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.assignYoutubeTitleStmt, err = db.PrepareContext(ctx, assignYoutubeTitle); err != nil {
 		return nil, fmt.Errorf("error preparing query AssignYoutubeTitle: %w", err)
 	}
+	if q.assignYoutubeVideoToProjectStmt, err = db.PrepareContext(ctx, assignYoutubeVideoToProject); err != nil {
+		return nil, fmt.Errorf("error preparing query AssignYoutubeVideoToProject: %w", err)
+	}
 	if q.deleteFileByIDStmt, err = db.PrepareContext(ctx, deleteFileByID); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteFileByID: %w", err)
 	}
@@ -120,6 +123,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.unassignProjectFileStmt, err = db.PrepareContext(ctx, unassignProjectFile); err != nil {
 		return nil, fmt.Errorf("error preparing query UnassignProjectFile: %w", err)
 	}
+	if q.unassignYoutubeVideoFromProjectStmt, err = db.PrepareContext(ctx, unassignYoutubeVideoFromProject); err != nil {
+		return nil, fmt.Errorf("error preparing query UnassignYoutubeVideoFromProject: %w", err)
+	}
 	return &q, nil
 }
 
@@ -143,6 +149,11 @@ func (q *Queries) Close() error {
 	if q.assignYoutubeTitleStmt != nil {
 		if cerr := q.assignYoutubeTitleStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing assignYoutubeTitleStmt: %w", cerr)
+		}
+	}
+	if q.assignYoutubeVideoToProjectStmt != nil {
+		if cerr := q.assignYoutubeVideoToProjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing assignYoutubeVideoToProjectStmt: %w", cerr)
 		}
 	}
 	if q.deleteFileByIDStmt != nil {
@@ -285,6 +296,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing unassignProjectFileStmt: %w", cerr)
 		}
 	}
+	if q.unassignYoutubeVideoFromProjectStmt != nil {
+		if cerr := q.unassignYoutubeVideoFromProjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing unassignYoutubeVideoFromProjectStmt: %w", cerr)
+		}
+	}
 	return err
 }
 
@@ -328,6 +344,7 @@ type Queries struct {
 	assignYoutubeDescriptionStmt         *sql.Stmt
 	assignYoutubeFileIDStmt              *sql.Stmt
 	assignYoutubeTitleStmt               *sql.Stmt
+	assignYoutubeVideoToProjectStmt      *sql.Stmt
 	deleteFileByIDStmt                   *sql.Stmt
 	deleteProjectByUUIDStmt              *sql.Stmt
 	getFileByIDStmt                      *sql.Stmt
@@ -356,6 +373,7 @@ type Queries struct {
 	newYoutubeFormatStmt                 *sql.Stmt
 	newYoutubeYtdlpVersionStmt           *sql.Stmt
 	unassignProjectFileStmt              *sql.Stmt
+	unassignYoutubeVideoFromProjectStmt  *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -366,6 +384,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		assignYoutubeDescriptionStmt:         q.assignYoutubeDescriptionStmt,
 		assignYoutubeFileIDStmt:              q.assignYoutubeFileIDStmt,
 		assignYoutubeTitleStmt:               q.assignYoutubeTitleStmt,
+		assignYoutubeVideoToProjectStmt:      q.assignYoutubeVideoToProjectStmt,
 		deleteFileByIDStmt:                   q.deleteFileByIDStmt,
 		deleteProjectByUUIDStmt:              q.deleteProjectByUUIDStmt,
 		getFileByIDStmt:                      q.getFileByIDStmt,
@@ -394,5 +413,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		newYoutubeFormatStmt:                 q.newYoutubeFormatStmt,
 		newYoutubeYtdlpVersionStmt:           q.newYoutubeYtdlpVersionStmt,
 		unassignProjectFileStmt:              q.unassignProjectFileStmt,
+		unassignYoutubeVideoFromProjectStmt:  q.unassignYoutubeVideoFromProjectStmt,
 	}
 }

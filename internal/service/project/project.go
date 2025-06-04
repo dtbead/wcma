@@ -54,7 +54,11 @@ func (p ProjectService) AssignFile(ctx context.Context, project_uuid entities.Pr
 }
 
 func (p ProjectService) AssignYoutube(ctx context.Context, project_uuid entities.ProjectUUID, youtube_id entities.YoutubeVideoID) (err error) {
-	panic("unimplemented")
+	return p.ProjectRepo.AssignYoutube(ctx, project_uuid, youtube_id)
+}
+
+func (p ProjectService) UnassignYoutube(ctx context.Context, project_uuid entities.ProjectUUID, youtube_id entities.YoutubeVideoID) (err error) {
+	return p.ProjectRepo.UnassignYoutube(ctx, project_uuid, youtube_id)
 }
 
 func (p ProjectService) AssignPrimaryFile(ctx context.Context, project_uuid entities.ProjectUUID, file_id entities.FileID) (err error) {
@@ -66,10 +70,6 @@ func (p ProjectService) UnassignPrimaryFile(ctx context.Context, project_uuid en
 }
 
 func (p ProjectService) UnassignFile(ctx context.Context, project_uuid entities.ProjectUUID, file_id entities.FileID) (err error) {
-	panic("unimplemented")
-}
-
-func (p ProjectService) UnassignYoutube(ctx context.Context, project_uuid entities.ProjectUUID, youtube_id entities.YoutubeVideoID) (err error) {
 	panic("unimplemented")
 }
 

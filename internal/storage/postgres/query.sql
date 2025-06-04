@@ -127,3 +127,14 @@ SELECT * FROM file_video WHERE file_id = $1;
 
 -- name: GetYoutubeChannelVideos :many
 SELECT youtube_id FROM youtube_channel_youtube_video WHERE channel_id = $1;
+
+-- name: AssignYoutubeVideoToProject :exec
+INSERT INTO project_file (project_id, file_id) VALUES
+((SELECT id FROM project WHERE uuid = $1), (SELECT file_id FROM youtube_file WHERE youtube_id = $2));
+
+-- name: UnassignYoutubeVideoFromProject :exec
+DELETE FROM project_file 
+WHERE 
+ project_id = (SELECT id FROM project WHERE uuid = $1)
+AND
+ file_id = (SELECT file_id FROM youtube_file WHERE youtube_id = $2);

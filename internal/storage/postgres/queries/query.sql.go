@@ -71,6 +71,21 @@ func (q *Queries) AssignYoutubeTitle(ctx context.Context, arg AssignYoutubeTitle
 	return err
 }
 
+const assignYoutubeVideoToProject = `-- name: AssignYoutubeVideoToProject :exec
+INSERT INTO project_file (project_id, file_id) VALUES
+((SELECT id FROM project WHERE uuid = $1), (SELECT file_id FROM youtube_file WHERE youtube_id = $2))
+`
+
+type AssignYoutubeVideoToProjectParams struct {
+	Uuid      string
+	YoutubeID interface{}
+}
+
+func (q *Queries) AssignYoutubeVideoToProject(ctx context.Context, arg AssignYoutubeVideoToProjectParams) error {
+	_, err := q.exec(ctx, q.assignYoutubeVideoToProjectStmt, assignYoutubeVideoToProject, arg.Uuid, arg.YoutubeID)
+	return err
+}
+
 const deleteFileByID = `-- name: DeleteFileByID :exec
 DELETE FROM file WHERE id = $1
 `
@@ -676,5 +691,22 @@ DELETE FROM project_file WHERE file_id = $1
 
 func (q *Queries) UnassignProjectFile(ctx context.Context, fileID int64) error {
 	_, err := q.exec(ctx, q.unassignProjectFileStmt, unassignProjectFile, fileID)
+	return err
+}
+
+const unassignYoutubeVideoFromProject = `-- name: UnassignYoutubeVideoFromProject :exec
+DELETE FROM project_file WHERE 
+    project_id = (SELECT id FROM project WHERE uuid = $1)
+    AND
+    file_id = (SELECT file_id FROM youtube_file WHERE youtube_id = $2)
+`
+
+type UnassignYoutubeVideoFromProjectParams struct {
+	Uuid      string
+	YoutubeID interface{}
+}
+
+func (q *Queries) UnassignYoutubeVideoFromProject(ctx context.Context, arg UnassignYoutubeVideoFromProjectParams) error {
+	_, err := q.exec(ctx, q.unassignYoutubeVideoFromProjectStmt, unassignYoutubeVideoFromProject, arg.Uuid, arg.YoutubeID)
 	return err
 }

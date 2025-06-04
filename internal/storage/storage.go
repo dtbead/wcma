@@ -21,6 +21,8 @@ type ProjectRepository interface {
 	AssignProjectFile(ctx context.Context, uuid entities.ProjectUUID, file_id entities.FileID) (err error)
 	UnassignProjectVideo(ctx context.Context, uuid entities.ProjectUUID, file_id entities.FileID) (err error)
 	GetProjectVideos(ctx context.Context, uuid entities.ProjectUUID) (file_ids []entities.FileID, err error)
+	AssignYoutube(ctx context.Context, project_uuid entities.ProjectUUID, youtube_id entities.YoutubeVideoID) (err error)
+	UnassignYoutube(ctx context.Context, project_uuid entities.ProjectUUID, youtube_id entities.YoutubeVideoID) (err error)
 }
 
 type YoutubeRepository interface {

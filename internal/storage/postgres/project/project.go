@@ -95,3 +95,17 @@ func (p ProjectRepository) GetProjectVideos(ctx context.Context, uuid entities.P
 
 	return file_ids, nil
 }
+
+func (p ProjectRepository) AssignYoutube(ctx context.Context, uuid entities.ProjectUUID, youtube_id entities.YoutubeVideoID) (err error) {
+	return p.q.AssignYoutubeVideoToProject(ctx, queries.AssignYoutubeVideoToProjectParams{
+		Uuid:      string(uuid),
+		YoutubeID: youtube_id,
+	})
+}
+
+func (p ProjectRepository) UnassignYoutube(ctx context.Context, uuid entities.ProjectUUID, youtube_id entities.YoutubeVideoID) (err error) {
+	return p.q.UnassignYoutubeVideoFromProject(ctx, queries.UnassignYoutubeVideoFromProjectParams{
+		Uuid:      string(uuid),
+		YoutubeID: youtube_id,
+	})
+}
