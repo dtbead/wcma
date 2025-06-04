@@ -67,6 +67,7 @@ func (m metadata) ToYoutubeEntity() entities.Youtube {
 			Video: entities.Video{
 				VideoCodec: m.Vcodec,
 				AudioCodec: m.Acodec,
+				Duration:   m.Duration,
 				Fps:        int16(m.Fps),
 				Width:      int16(m.Width),
 				Height:     int16(m.Height),

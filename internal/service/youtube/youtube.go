@@ -28,8 +28,12 @@ func IsValidYoutube(y *entities.Youtube) error {
 		return errors.New("invalid UploadDate")
 	case y.YouTube.Video.Width < 15 || y.YouTube.Video.Height < 15:
 		return errors.New("invalid video width/height")
+	case y.YouTube.Duration < 1:
+		return errors.New("invalid youtube duration")
 	case y.YouTube.Video.Duration < 1:
 		return errors.New("invalid video duration")
+	case y.YouTube.Video.Duration != y.YouTube.Duration:
+		return errors.New("video duration != youtube video duration")
 	case y.YouTube.Video.Fps < 1:
 		return errors.New("invalid video fps")
 	case y.YouTube.ViewCount < 0:
