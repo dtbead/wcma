@@ -8,11 +8,11 @@ import (
 )
 
 type ProjectService struct {
-	ProjectRepo *storage.ProjectRepository
+	ProjectRepo storage.ProjectRepository
 }
 
 func NewService(ProjectRepo storage.ProjectRepository) *ProjectService {
-	return &ProjectService{ProjectRepo: &ProjectRepo}
+	return &ProjectService{ProjectRepo: ProjectRepo}
 }
 
 func (p ProjectService) NewProject(ctx context.Context, project *entities.ProjectImport) (uuid entities.ProjectUUID, err error) {
