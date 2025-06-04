@@ -43,7 +43,7 @@ type metadata struct {
 	Dislike_count int     `json:"dislike_count"`
 	Width         int     `json:"width"`
 	Height        int     `json:"height"`
-	Fps           int     `json:"fps"`
+	Fps           float64 `json:"fps"`
 	Is_live       bool    `json:"is_live"`
 	Age_limit     int     `json:"age_limit"`
 	Version       struct {
