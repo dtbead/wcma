@@ -44,8 +44,9 @@ func helperOpenTestFile(t *testing.T) *os.File {
 }
 
 func TestYoutubeRepository_NewYoutubeVideo(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -110,8 +111,9 @@ func TestYoutubeRepository_NewYoutubeVideo(t *testing.T) {
 }
 
 func TestYoutubeRepository_GetYoutubeVideo(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -169,8 +171,9 @@ func TestYoutubeRepository_GetYoutubeVideo(t *testing.T) {
 }
 
 func TestYoutubeRepository_NewYoutube(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -240,8 +243,9 @@ func TestYoutubeRepository_NewYoutube(t *testing.T) {
 }
 
 func TestYoutubeRepository_GetYoutubeFileIDs(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -283,8 +287,9 @@ func TestYoutubeRepository_GetYoutubeFileIDs(t *testing.T) {
 }
 
 func TestYoutubeRepository_GetYtdlpVersion(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -326,8 +331,9 @@ func TestYoutubeRepository_GetYtdlpVersion(t *testing.T) {
 }
 
 func TestYoutubeRepository_GetFormat(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -367,8 +373,9 @@ func TestYoutubeRepository_GetFormat(t *testing.T) {
 }
 
 func TestYoutubeRepository_GetTitle(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -408,8 +415,9 @@ func TestYoutubeRepository_GetTitle(t *testing.T) {
 }
 
 func TestYoutubeRepository_GetChannelByVideoID(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -449,8 +457,9 @@ func TestYoutubeRepository_GetChannelByVideoID(t *testing.T) {
 }
 
 func TestYoutubeRepository_GetDescription(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {
@@ -492,8 +501,9 @@ func TestYoutubeRepository_GetDescription(t *testing.T) {
 }
 
 func TestYoutubeRepository_GetChannelVideos(t *testing.T) {
-	db := helper_test.NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	youtubeRepo := youtube.NewYoutubeRepository(db)
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
 	if err != nil {

@@ -3,7 +3,6 @@ package testing
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/DATA-DOG/go-txdb"
 	"github.com/dtbead/wc-maps-archive/internal/entities"
@@ -17,7 +16,7 @@ type PostgresConnection struct {
 	Ip, User, Password, DbName, Port string
 }
 
-var pgConnOpt = PostgresConnection{
+var DefaultConnection = PostgresConnection{
 	Ip:       "localhost",
 	User:     "postgres",
 	Password: "password",
@@ -25,25 +24,39 @@ var pgConnOpt = PostgresConnection{
 	Port:     "6664",
 }
 
-// database connection url
-var dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-	pgConnOpt.User, pgConnOpt.Password, pgConnOpt.Ip, pgConnOpt.Port, pgConnOpt.DbName)
-
-func init() {
-	// creates custom database driver which doesn't commit any transactions to postgres/pgx
-	txdb.Register("txdb1", "pgx", dsn)
+// NewDsn returns a new database connection url string
+func NewDsn(pgConnOpt PostgresConnection) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+		pgConnOpt.User, pgConnOpt.Password, pgConnOpt.Ip, pgConnOpt.Port, pgConnOpt.DbName)
 }
 
-func NewDatabase() *sql.DB {
+// isInitialized determines whether the database driver "txdb1" has already been registered.
+var isInitialized bool
+
+// NewDatabase returns a new database which doesn't commit any transactions. If no pgConnOpt is given, then
+// the DefaultConnection variable will be used instead.
+func NewDatabase(pgConnOpt *PostgresConnection) *sql.DB {
+	if pgConnOpt == nil {
+		pgConnOpt = &DefaultConnection
+	}
+
+	dsn := NewDsn(*pgConnOpt)
+
+	// creates custom database driver which doesn't commit any transactions to postgres/pgx
+	if !isInitialized {
+		txdb.Register("txdb1", "pgx", dsn)
+		isInitialized = true
+	}
+
 	db, err := sql.Open("txdb1", dsn)
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("failed to create database for testing, %v", err))
 	}
 
 	// initialize database schema
 	_, err = db.Exec(postgres.Schema)
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("failed to initialize testing database schema, %v", err))
 	}
 
 	return db
@@ -86,7 +99,7 @@ func InsertFakeFile(db *sql.DB, amount int) (file_ids []entities.FileID, err err
 	var file_id int64
 
 	for range amount {
-		mockFile := mock_file.NewFile()
+		mockFile := mock_file.RandomFile()
 		res, err := stmt.Query(mockFile.PathRelative, mockFile.Extension, mockFile.Hashes.MD5, mockFile.Hashes.SHA1, mockFile.Hashes.SHA256, mockFile.Size)
 		if err != nil {
 			return nil, err

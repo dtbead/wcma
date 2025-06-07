@@ -2,65 +2,25 @@ package project_test
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"slices"
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-txdb"
 	"github.com/dtbead/wc-maps-archive/internal/entities"
 	"github.com/dtbead/wc-maps-archive/internal/helper"
-	"github.com/dtbead/wc-maps-archive/internal/storage/postgres"
+	helper_test "github.com/dtbead/wc-maps-archive/internal/helper/testing"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres/file"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres/project"
 	"github.com/google/go-cmp/cmp"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type PostgresConnection struct {
-	Ip, User, Password, DbName, Port string
-}
-
-var pgConnOpt = PostgresConnection{
-	Ip:       "localhost",
-	User:     "postgres",
-	Password: "password",
-	DbName:   "wc_staging",
-	Port:     "6664",
-}
-
-// database connection url
-var dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-	pgConnOpt.User, pgConnOpt.Password, pgConnOpt.Ip, pgConnOpt.Port, pgConnOpt.DbName)
-
-func TestMain(m *testing.M) {
-	// creates custom database driver which doesn't commit any transactions to postgres/pgx
-	txdb.Register("txdb1", "pgx", dsn)
-	os.Exit(m.Run())
-}
-
-func NewDatabase() *sql.DB {
-	db, err := sql.Open("txdb1", dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// initialize database schema
-	_, err = db.Exec(postgres.Schema)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return db
-}
-
 func TestProjectRepository_NewProject(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	projectRepo := project.NewProjectRepository(db)
 
 	type args struct {
@@ -100,8 +60,9 @@ func TestProjectRepository_NewProject(t *testing.T) {
 }
 
 func TestProjectRepository_DeleteProject(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	projectRepo := project.NewProjectRepository(db)
 
 	p := entities.Project{
@@ -140,8 +101,9 @@ func TestProjectRepository_DeleteProject(t *testing.T) {
 }
 
 func TestProjectRepository_GetProject(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	projectRepo := project.NewProjectRepository(db)
 
 	p := entities.Project{
@@ -193,8 +155,9 @@ func TestProjectRepository_GetProject(t *testing.T) {
 }
 
 func TestProjectRepository_AssignProjectFile(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	projectRepo := project.NewProjectRepository(db)
 
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
@@ -256,8 +219,9 @@ func TestProjectRepository_AssignProjectFile(t *testing.T) {
 }
 
 func TestProjectRepository_AssignProjectFileEmptyUUID(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	projectRepo := project.NewProjectRepository(db)
 
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
@@ -295,8 +259,9 @@ func TestProjectRepository_AssignProjectFileEmptyUUID(t *testing.T) {
 }
 
 func TestProjectRepository_UnassignProjectVideoInvalidFileID(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
+
 	projectRepo := project.NewProjectRepository(db)
 
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())

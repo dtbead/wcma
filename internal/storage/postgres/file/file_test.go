@@ -2,63 +2,23 @@ package file_test
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"io"
-	"log"
 	"os"
 	"reflect"
 	"testing"
 
-	"github.com/DATA-DOG/go-txdb"
 	"github.com/dtbead/wc-maps-archive/internal/entities"
-	file_helper "github.com/dtbead/wc-maps-archive/internal/helper/file"
+	helper_file "github.com/dtbead/wc-maps-archive/internal/helper/file"
+	helper_test "github.com/dtbead/wc-maps-archive/internal/helper/testing"
+
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/dtbead/wc-maps-archive/internal/storage/postgres"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type PostgresConnection struct {
-	Ip, User, Password, DbName, Port string
-}
-
-var pgConnOpt = PostgresConnection{
-	Ip:       "localhost",
-	User:     "postgres",
-	Password: "password",
-	DbName:   "wc_staging",
-	Port:     "6664",
-}
-
-// database connection url
-var dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-	pgConnOpt.User, pgConnOpt.Password, pgConnOpt.Ip, pgConnOpt.Port, pgConnOpt.DbName)
-
-func TestMain(m *testing.M) {
-	// creates custom database driver which doesn't commit any transactions to postgres/pgx
-	txdb.Register("txdb", "pgx", dsn)
-	os.Exit(m.Run())
-}
-
-func NewDatabase() *sql.DB {
-	db, err := sql.Open("txdb", dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// initialize database schema
-	_, err = db.Exec(postgres.Schema)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return db
-}
-
 func TestFileRepository_NewFile(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
 
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
@@ -101,7 +61,7 @@ func TestFileRepository_NewFile(t *testing.T) {
 }
 
 func TestFileRepository_DeleteFile(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
 
 	fileRepo, err := file.NewFileRepository(db, t.TempDir())
@@ -141,7 +101,7 @@ func TestFileRepository_DeleteFile(t *testing.T) {
 }
 
 func TestFileRepository_GetFile(t *testing.T) {
-	db := NewDatabase()
+	db := helper_test.NewDatabase(&helper_test.DefaultConnection)
 	defer db.Close()
 
 	tempDir := t.TempDir()
@@ -174,13 +134,13 @@ func TestFileRepository_GetFile(t *testing.T) {
 		{"invalid/missing file_id", *fileRepo, args{context.Background(), file_id + 1}, nil, true},
 		{"valid file_id", *fileRepo, args{context.Background(), file_id}, &entities.File{
 			PathRelative: "6b/6bebd6bfc85e9840e6bb47e1f329b5453afd184fa7fe2d52da3cd46200062ddc.mkv",
-			PathAbsolute: file_helper.SanitizePath(tempDir + "/" + "6b/6bebd6bfc85e9840e6bb47e1f329b5453afd184fa7fe2d52da3cd46200062ddc.mkv"),
+			PathAbsolute: helper_file.SanitizePath(tempDir + "/" + "6b/6bebd6bfc85e9840e6bb47e1f329b5453afd184fa7fe2d52da3cd46200062ddc.mkv"),
 			Extension:    "mkv",
 			Size:         330070,
 			Hashes: entities.Hashes{
-				SHA256: file_helper.HexStringToByte("6bebd6bfc85e9840e6bb47e1f329b5453afd184fa7fe2d52da3cd46200062ddc"),
-				SHA1:   file_helper.HexStringToByte("a51852be25a413051cfc8954380f64a3f0668478"),
-				MD5:    file_helper.HexStringToByte("3e9cb26fede9bd75e406cbb7e6ff81e6"),
+				SHA256: helper_file.HexStringToByte("6bebd6bfc85e9840e6bb47e1f329b5453afd184fa7fe2d52da3cd46200062ddc"),
+				SHA1:   helper_file.HexStringToByte("a51852be25a413051cfc8954380f64a3f0668478"),
+				MD5:    helper_file.HexStringToByte("3e9cb26fede9bd75e406cbb7e6ff81e6"),
 			},
 		}, false},
 	}
