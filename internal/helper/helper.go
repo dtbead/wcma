@@ -123,9 +123,9 @@ func RandomTime(start, end time.Time) time.Time {
 	return UnixEpochToTime(RandomInt(int(start.Unix()), int(end.Unix())))
 }
 
-func RandomSlice(s []any) (any, error) {
+func RandomSlice[slice any](s []slice) (slice, error) {
 	if s == nil || len(s) < 1 {
-		return nil, errors.New("no slice given")
+		return s[0], errors.New("no slice given")
 	}
 
 	r := RandomInt(0, len(s))
