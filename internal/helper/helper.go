@@ -56,7 +56,7 @@ func RandomRune(list []rune, amount int) []rune {
 }
 
 func RandomYoutubeID() entities.YoutubeVideoID {
-	// [0-9A-Za-z_-]{10}[048AEIMQUYcgkosw]
+	// [0-9A-Za-z_-]{10}[048AEIMQUYcgkosw] regex
 	var part1 = []rune{
 		'-', '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
@@ -71,8 +71,10 @@ func RandomYoutubeID() entities.YoutubeVideoID {
 		'k', 'o', 's', 'w',
 	}
 
-	youtube_id := RandomRune(part1, 10)
-	youtube_id = append(youtube_id, RandomRune(part2, 1)[0])
+	youtube_id := entities.YoutubeVideoID(string(RandomRune(part1, 10)) + string(RandomRune(part2, 1)))
+	if !youtube_id.IsValid() {
+		panic("unexpectedly generated a random invalid youtube_id")
+	}
 
 	return entities.YoutubeVideoID(youtube_id)
 }
