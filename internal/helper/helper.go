@@ -77,6 +77,28 @@ func RandomYoutubeID() entities.YoutubeVideoID {
 	return entities.YoutubeVideoID(youtube_id)
 }
 
+func RandomYoutubeChannelID() entities.YoutubeChannelID {
+	// UC[0-9A-Za-z_-]{21}[AQgw] regex
+	var part1 = []rune{
+		'-', '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+		'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+		'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+		'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+		'w', 'x', 'y', 'z',
+	}
+
+	var part2 = []rune{
+		'A', 'Q', 'g', 'w',
+	}
+
+	channel_id := entities.YoutubeChannelID("UC" + string(RandomRune(part1, 21)) + string(RandomRune(part2, 1)))
+	if !channel_id.IsValid() {
+		panic("unexpectedly generated a random invalid channel_id")
+	}
+	return entities.YoutubeChannelID(channel_id)
+}
+
 func RandomFileExtension() string {
 	var ext = []string{
 		"mp4",
