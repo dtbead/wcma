@@ -3,6 +3,7 @@ package helper
 import (
 	"crypto/md5"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	randv2 "math/rand/v2"
 	"time"
@@ -92,6 +93,19 @@ func RandomBool() bool {
 
 func UnixEpochToTime(epoch int) time.Time {
 	return time.Unix(int64(epoch), 0)
+}
+
+func RandomTime(start, end time.Time) time.Time {
+	return UnixEpochToTime(RandomInt(int(start.Unix()), int(end.Unix())))
+}
+
+func RandomSlice(s []any) (any, error) {
+	if s == nil || len(s) < 1 {
+		return nil, errors.New("no slice given")
+	}
+
+	r := RandomInt(0, len(s))
+	return s[r], nil
 }
 
 func GetMD5HashFromString(text string) []byte {
