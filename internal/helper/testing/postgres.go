@@ -6,7 +6,10 @@ import (
 	"log"
 
 	"github.com/DATA-DOG/go-txdb"
+	"github.com/dtbead/wc-maps-archive/internal/entities"
+	mock_file "github.com/dtbead/wc-maps-archive/internal/helper/testing/mock/file"
 	"github.com/dtbead/wc-maps-archive/internal/storage/postgres"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -44,4 +47,60 @@ func NewDatabase() *sql.DB {
 	}
 
 	return db
+}
+
+// InsertFakFile creates a new and random database entry into the 'file' table. amount specifies how much
+// fake files are to be generated.
+// The given sql.DB is expected to have a matching table schema in `...\internal\storage\postgres\schema.sql`.
+func InsertFakeFile(db *sql.DB, amount int) (file_ids []entities.FileID, err error) {
+	/*
+		CREATE TABLE "file" (
+			"id" BIGINT NOT NULL UNIQUE GENERATED ALWAYS AS IDENTITY,
+			"path" TEXT NOT NULL UNIQUE,
+			"extension" TEXT NOT NULL CHECK (length(extension) >= 3 AND length(extension) <= 6),
+			"md5" BYTEA NOT NULL UNIQUE CHECK (length(md5) = 16),
+			"sha1" BYTEA NOT NULL UNIQUE CHECK (length(sha1) = 20),
+			"sha256" BYTEA NOT NULL UNIQUE CHECK (length(sha256) = 32),
+			"filesize" BIGINT NOT NULL CHECK (filesize >= 16),
+			PRIMARY KEY("id")
+		);
+
+		CREATE TABLE "file_video" (
+			"file_id" BIGINT NOT NULL UNIQUE,
+			"duration" INTEGER NOT NULL CHECK (duration >= 0),
+			"width" SMALLINT NOT NULL CHECK (width >= 0),
+			"height" SMALLINT NOT NULL CHECK (height >= 0),
+			"fps" SMALLINT CHECK (fps >= 0),
+			"video_codec" TEXT,
+			"audio_codec" TEXT,
+			FOREIGN KEY ("file_id") REFERENCES file("id")
+			ON UPDATE CASCADE ON DELETE CASCADE
+		);
+	*/
+	stmt, err := db.Prepare("INSERT INTO file (path, extension, md5, sha1, sha256, filesize) VALUES ($1, $2, $3, $4, $5) RETURNING id;")
+	if err != nil {
+		return nil, err
+	}
+
+	file_ids = []entities.FileID{}
+	var file_id int64
+
+	for range amount {
+		mockFile := mock_file.NewFile()
+		res, err := stmt.Query(mockFile.PathRelative, mockFile.Extension, mockFile.Hashes.MD5, mockFile.Hashes.SHA1, mockFile.Hashes.SHA256, mockFile.Size)
+		if err != nil {
+			return nil, err
+		}
+
+		for res.Next() {
+			err = res.Scan(&file_id)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		file_ids = append(file_ids, entities.FileID(file_id))
+	}
+
+	return file_ids, nil
 }
