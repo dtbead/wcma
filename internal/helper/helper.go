@@ -48,7 +48,7 @@ func RandomEntitiesHash() entities.Hashes {
 func RandomRune(list []rune, amount int) []rune {
 	r := make([]rune, 0, amount)
 
-	for i := 0; i < amount; i++ {
+	for range amount {
 		r = append(r, list[RandomInt(0, len(list))])
 	}
 
